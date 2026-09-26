@@ -1,0 +1,44 @@
+name: spendwise
+description: "SpendWise - تطبيق تتبع المصروفات والدخل (يعمل بدون إنترنت)"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # تخزين محلي دائم (SQLite) - البيانات تبقى بعد إغلاق التطبيق
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+
+  # تنسيق العملة والتاريخ
+  intl: ^0.19.0
+
+  # الرسوم البيانية بشاشة Analytics
+  fl_chart: ^0.68.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+  # توليد أيقونة التطبيق لكل من Android و iOS من assets/icon/app_icon.png
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0F766E"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/app_icon.png
+    - assets/images/
