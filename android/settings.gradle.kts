@@ -18,10 +18,12 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-//    id("com.android.application") version "8.7.3" apply false
-//    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
-    id("com.android.application") version "8.5.2" apply false
-    id("org.jetbrains.kotlin.android") version "2.0.21" apply false
+    // 8.7.3 / 2.1.0 are in the local Gradle cache; 8.5.2 was evicted and
+    // Google Maven can't be reached from this network to download it again.
+    id("com.android.application") version "8.7.3" apply false
+    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+//    id("com.android.application") version "8.5.2" apply false
+//    id("org.jetbrains.kotlin.android") version "2.0.21" apply false
 }
 
 include(":app")
