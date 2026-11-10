@@ -1,16 +1,22 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import '../models/app_settings.dart';
 import '../models/transaction_model.dart';
 
 /// طبقة الوصول الوحيدة لقاعدة بيانات SQLite المحلية.
-
+///
+/// سجل النسخ:
+/// - 1: جدول transactions.
+/// - 2: جدول settings (اللغة والمظهر). الترحيل لا يمس المعاملات الموجودة.
 class DatabaseHelper {
   DatabaseHelper._internal();
   static final DatabaseHelper instance = DatabaseHelper._internal();
 
   static Database? _database;
 
+  static const int _version = 2;
   static const String _tableName = 'transactions';
+  static const String _settingsTable = 'settings';
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -24,7 +30,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 1,
+      version: _version,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE $_tableName (
@@ -36,8 +42,21 @@ class DatabaseHelper {
             date TEXT NOT NULL
           )
         ''');
+        await _createSettingsTable(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) await _createSettingsTable(db);
       },
     );
+  }
+
+  Future<void> _createSettingsTable(DatabaseExecutor db) {
+    return db.execute('''
+      CREATE TABLE IF NOT EXISTS $_settingsTable (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''');
   }
 
   // ---------------------------------------------------------------------
@@ -69,18 +88,18 @@ class DatabaseHelper {
     return db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
   }
 
-  /// كل المعاملات (تُستخدم بقسم Recent بالشاشة الرئيسية - غير مقيدة بالشهر)
+  /// كل المعاملات مرتبة من الأحدث.
   Future<List<TransactionModel>> getAllTransactions() async {
     final db = await database;
     final rows = await db.query(_tableName, orderBy: 'date DESC, id DESC');
     return rows.map((e) => TransactionModel.fromMap(e)).toList();
   }
 
-  /// معاملات شهر محدد فقط (تُستخدم بشاشتي Overview - البطاقة، وHistory)
+  /// معاملات شهر محدد فقط (Overview وHistory ووضع Month بشاشة Analytics)
   Future<List<TransactionModel>> getTransactionsByMonth(
-      int year,
-      int month,
-      ) async {
+    int year,
+    int month,
+  ) async {
     final db = await database;
     final start = DateTime(year, month, 1);
     final end = DateTime(year, month + 1, 1);
@@ -95,9 +114,9 @@ class DatabaseHelper {
 
   /// معاملات نطاق تاريخ محدد (تُستخدم بوضع Week بشاشة Analytics)
   Future<List<TransactionModel>> getTransactionsByRange(
-      DateTime start,
-      DateTime endExclusive,
-      ) async {
+    DateTime start,
+    DateTime endExclusive,
+  ) async {
     final db = await database;
     final rows = await db.query(
       _tableName,
@@ -106,5 +125,30 @@ class DatabaseHelper {
       orderBy: 'date DESC, id DESC',
     );
     return rows.map((e) => TransactionModel.fromMap(e)).toList();
+  }
+
+  // ---------------------------------------------------------------------
+  // الإعدادات
+  // ---------------------------------------------------------------------
+
+  Future<AppSettings> getSettings() async {
+    final db = await database;
+    final rows = await db.query(_settingsTable);
+    return AppSettings.fromMap({
+      for (final row in rows) row['key'] as String: row['value'] as String,
+    });
+  }
+
+  Future<void> saveSettings(AppSettings settings) async {
+    final db = await database;
+    final batch = db.batch();
+    settings.toMap().forEach((key, value) {
+      batch.insert(
+        _settingsTable,
+        {'key': key, 'value': value},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    });
+    await batch.commit(noResult: true);
   }
 }

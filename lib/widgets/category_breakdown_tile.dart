@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../utils/category_data.dart';
 import '../utils/app_colors.dart';
+import '../utils/app_strings.dart';
+import '../utils/category_data.dart';
 import '../utils/formatters.dart';
 
-/// صف واحد بقسم "By Category": أيقونة + اسم + مبلغ + شريط تقدم نسبي.
+/// صف واحد بقسم "By Category": أيقونة + اسم + مبلغ + شريط تقدم ونسبته تحته.
 class CategoryBreakdownTile extends StatelessWidget {
   final String categoryKey;
   final double amount;
@@ -20,6 +21,7 @@ class CategoryBreakdownTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final category = CategoryData.findByKey(categoryKey);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -27,23 +29,21 @@ class CategoryBreakdownTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text(category.emoji, style: const TextStyle(fontSize: 16)),
-                  const SizedBox(width: 8),
-                  Text(category.label,
-                      style: const TextStyle(
-                          fontSize: 14, color: AppColors.textPrimary)),
-                ],
+              Text(category.emoji, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  AppStrings.of(context).categoryName(category.key),
+                  style: TextStyle(fontSize: 14, color: colors.textPrimary),
+                ),
               ),
               Text(
                 Formatters.currency(amount),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: colors.textPrimary,
                 ),
               ),
             ],
@@ -54,8 +54,16 @@ class CategoryBreakdownTile extends StatelessWidget {
             child: LinearProgressIndicator(
               value: ratio.clamp(0, 1),
               minHeight: 8,
-              backgroundColor: AppColors.divider,
+              backgroundColor: colors.chartTrack,
               valueColor: AlwaysStoppedAnimation(barColor),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: Text(
+              Formatters.percent((ratio * 100).round()),
+              style: TextStyle(fontSize: 12, color: colors.textSecondary),
             ),
           ),
         ],

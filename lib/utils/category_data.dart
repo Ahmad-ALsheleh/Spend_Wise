@@ -1,134 +1,123 @@
-import 'package:flutter/material.dart';
 import '../models/category_model.dart';
+import '../models/transaction_model.dart';
+import 'app_colors.dart';
 
-/// كل التصنيفات الثابتة بالتطبيق، مطابقة لشاشة "New Entry".
+/// مفاتيح الفئات كما تُخزن بعمود category_key (لا تُغيَّر أبداً).
+class CategoryKeys {
+  CategoryKeys._();
+
+  static const String foodDrink = 'food_drink';
+  static const String transport = 'transport';
+  static const String housing = 'housing';
+  static const String health = 'health';
+  static const String fun = 'fun';
+  static const String shopping = 'shopping';
+  static const String education = 'education';
+  static const String travel = 'travel';
+  static const String utilities = 'utilities';
+  static const String otherExpense = 'other_expense';
+
+  static const String salary = 'salary';
+  static const String freelance = 'freelance';
+  static const String investment = 'investment';
+  static const String gift = 'gift';
+  static const String otherIncome = 'other_income';
+}
+
+/// كل التصنيفات الثابتة بالتطبيق، بنفس ترتيب شاشة "New Entry".
+/// أسماؤها المعروضة في AppStrings.categoryName.
 class CategoryData {
   CategoryData._();
 
   static const List<CategoryModel> expenseCategories = [
     CategoryModel(
-      key: 'food_drink',
-      label: 'Food & Drink',
+      key: CategoryKeys.foodDrink,
       emoji: '🍔',
-      color: Color(0xFFFDE7D9),
+      color: AppColors.categoryFoodDrink,
     ),
     CategoryModel(
-      key: 'transport',
-      label: 'Transport',
+      key: CategoryKeys.transport,
       emoji: '🚗',
-      color: Color(0xFFFCE2E2),
+      color: AppColors.categoryTransport,
     ),
     CategoryModel(
-      key: 'housing',
-      label: 'Housing',
+      key: CategoryKeys.housing,
       emoji: '🏠',
-      color: Color(0xFFE3E9FD),
+      color: AppColors.categoryHousing,
     ),
     CategoryModel(
-      key: 'health',
-      label: 'Health',
+      key: CategoryKeys.health,
       emoji: '💊',
-      color: Color(0xFFFCE2EC),
+      color: AppColors.categoryHealth,
     ),
     CategoryModel(
-      key: 'fun',
-      label: 'Fun',
+      key: CategoryKeys.fun,
       emoji: '🎮',
-      color: Color(0xFFF1E9FD),
+      color: AppColors.categoryFun,
     ),
     CategoryModel(
-      key: 'shopping',
-      label: 'Shopping',
+      key: CategoryKeys.shopping,
       emoji: '🛍️',
-      color: Color(0xFFE0EEFD),
+      color: AppColors.categoryShopping,
     ),
     CategoryModel(
-      key: 'education',
-      label: 'Education',
+      key: CategoryKeys.education,
       emoji: '📚',
-      color: Color(0xFFE1F4E7),
+      color: AppColors.categoryEducation,
     ),
     CategoryModel(
-      key: 'travel',
-      label: 'Travel',
+      key: CategoryKeys.travel,
       emoji: '✈️',
-      color: Color(0xFFE2F0FD),
+      color: AppColors.categoryTravel,
     ),
     CategoryModel(
-      key: 'utilities',
-      label: 'Utilities',
+      key: CategoryKeys.utilities,
       emoji: '💡',
-      color: Color(0xFFFDF6DA),
+      color: AppColors.categoryUtilities,
     ),
     CategoryModel(
-      key: 'other_expense',
-      label: 'Other',
+      key: CategoryKeys.otherExpense,
       emoji: '📦',
-      color: Color(0xFFEFE7DC),
+      color: AppColors.categoryOtherExpense,
     ),
   ];
 
   static const List<CategoryModel> incomeCategories = [
     CategoryModel(
-      key: 'salary',
-      label: 'Salary',
+      key: CategoryKeys.salary,
       emoji: '💼',
-      color: Color(0xFFF6DCDA),
+      color: AppColors.categorySalary,
     ),
     CategoryModel(
-      key: 'freelance',
-      label: 'Freelance',
+      key: CategoryKeys.freelance,
       emoji: '💻',
-      color: Color(0xFFDCEEFB),
+      color: AppColors.categoryFreelance,
     ),
     CategoryModel(
-      key: 'investment',
-      label: 'Investment',
+      key: CategoryKeys.investment,
       emoji: '📈',
-      color: Color(0xFFE4E9FC),
+      color: AppColors.categoryInvestment,
     ),
     CategoryModel(
-      key: 'gift',
-      label: 'Gift',
+      key: CategoryKeys.gift,
       emoji: '🎁',
-      color: Color(0xFFFCE4DC),
+      color: AppColors.categoryGift,
     ),
     CategoryModel(
-      key: 'other_income',
-      label: 'Other',
+      key: CategoryKeys.otherIncome,
       emoji: '💰',
-      color: Color(0xFFFCEFDC),
+      color: AppColors.categoryOtherIncome,
     ),
   ];
 
   static List<CategoryModel> byType(String type) =>
-      type == 'income' ? incomeCategories : expenseCategories;
+      type == TransactionType.income ? incomeCategories : expenseCategories;
 
-  /// إيجاد تصنيف بمفتاحه بغض النظر عن نوعه (يُستخدم بعرض المعاملات)
+  /// إيجاد تصنيف بمفتاحه بغض النظر عن نوعه (يُستخدم بعرض المعاملات).
   static CategoryModel findByKey(String key) {
-    final all = [...expenseCategories, ...incomeCategories];
-    return all.firstWhere(
-          (c) => c.key == key,
-      orElse: () => const CategoryModel(
-        key: 'other_expense',
-        label: 'Other',
-        emoji: '📦',
-        color: Color(0xFFEFE7DC),
-      ),
-    );
+    for (final category in [...expenseCategories, ...incomeCategories]) {
+      if (category.key == key) return category;
+    }
+    return expenseCategories.last; // Other
   }
-
-  /// ألوان مميزة تُستخدم بالرسوم البيانية بشاشة Analytics (دائرة لكل تصنيف)
-  static const List<Color> chartPalette = [
-    Color(0xFFF6B93B), // برتقالي (Fun بالمثال)
-    Color(0xFF38B6A6),
-    Color(0xFFEF6C6C),
-    Color(0xFF6C8FEF),
-    Color(0xFFB06CEF),
-    Color(0xFF6CEF9D),
-    Color(0xFFEF6CC5),
-    Color(0xFFEFD46C),
-    Color(0xFF6CD9EF),
-    Color(0xFFA9856C),
-  ];
 }

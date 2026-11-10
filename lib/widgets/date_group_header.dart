@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
+import '../utils/app_strings.dart';
 import '../utils/formatters.dart';
+import 'section_label.dart';
 
+/// رأس مجموعة يوم بشاشة History: TODAY / YESTERDAY / التاريخ، ومصروف ذلك اليوم.
 class DateGroupHeader extends StatelessWidget {
   final DateTime date;
   final double dayTotal;
@@ -19,18 +22,13 @@ class DateGroupHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            Formatters.dateGroupLabel(date),
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textMuted,
-              letterSpacing: 0.5,
-            ),
-          ),
+          SectionLabel(AppStrings.of(context).dayGroupLabel(date)),
           Text(
             Formatters.currency(dayTotal),
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.of(context).textSecondary,
+            ),
           ),
         ],
       ),

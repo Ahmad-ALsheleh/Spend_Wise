@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../utils/app_colors.dart';
-import '../utils/category_data.dart';
+import '../utils/app_strings.dart';
+import '../utils/formatters.dart';
 
 /// عنصر بيانات جاهز لعرضه بمخطط "Spending Breakdown".
 class CategorySlice {
   final String categoryKey;
   final double amount;
   final double percentage; // 0-100
-  final Color color;
+  final Color color; // لون الفئة الثابت
 
   const CategorySlice({
     required this.categoryKey,
@@ -26,17 +27,22 @@ class SpendingBreakdownGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final strings = AppStrings.of(context);
+
     if (slices.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: 160,
         child: Center(
-          child: Text('No expenses yet', style: TextStyle(color: AppColors.textMuted)),
+          child: Text(
+            strings.noExpensesYet,
+            style: TextStyle(color: colors.textSecondary),
+          ),
         ),
       );
     }
 
-    final dominant = slices.reduce((a, b) => a.amount > b.amount ? a : b);
-    final dominantLabel = CategoryData.findByKey(dominant.categoryKey).label;
+    final dominant = slices.reduce((a, b) => a.amount >= b.amount ? a : b);
 
     return Row(
       children: [
@@ -48,35 +54,44 @@ class SpendingBreakdownGauge extends StatelessWidget {
             children: [
               PieChart(
                 PieChartData(
-                  sectionsSpace: 3,
+                  sectionsSpace: slices.length > 1 ? 3 : 0,
                   centerSpaceRadius: 52,
+                  startDegreeOffset: -90, // البداية من الأعلى كما في التصميم
                   sections: slices
-                      .map((s) => PieChartSectionData(
-                    value: s.percentage,
-                    color: s.color,
-                    radius: 22,
-                    showTitle: false,
-                  ))
+                      .map(
+                        (s) => PieChartSectionData(
+                          value: s.percentage,
+                          color: s.color,
+                          radius: 22,
+                          showTitle: false,
+                        ),
+                      )
                       .toList(),
                 ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${dominant.percentage.round()}%',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+              SizedBox(
+                width: 96,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      Formatters.percent(dominant.percentage.round()),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: colors.textPrimary,
+                      ),
                     ),
-                  ),
-                  Text(
-                    dominantLabel,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textMuted),
-                  ),
-                ],
+                    Text(
+                      strings.categoryName(dominant.categoryKey),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          TextStyle(fontSize: 12, color: colors.textSecondary),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -85,36 +100,42 @@ class SpendingBreakdownGauge extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: slices.map((s) {
-              final label = CategoryData.findByKey(s.categoryKey).label;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration:
-                      BoxDecoration(color: s.color, shape: BoxShape.circle),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(label,
-                          style: const TextStyle(
-                              fontSize: 13, color: AppColors.textPrimary)),
-                    ),
-                    Text(
-                      '${s.percentage.round()}%',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+            children: [
+              for (final s in slices)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: s.color,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          strings.categoryName(s.categoryKey),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        Formatters.percent(s.percentage.round()),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            }).toList(),
+            ],
           ),
         ),
       ],

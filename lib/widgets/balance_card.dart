@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
+import '../utils/app_strings.dart';
 import '../utils/formatters.dart';
 
-/// بطاقة "Net Balance" الخضراء المتدرجة بأعلى الشاشة الرئيسية.
-/// Widget مستقل بالكامل: يستقبل الأرقام جاهزة فقط، بدون أي منطق حسابي بداخله.
+/// بطاقة "Net Balance" المتدرجة بأعلى الشاشة الرئيسية.
+/// Widget مستقل بالكامل: يستقبل الأرقام جاهزة فقط.
 class BalanceCard extends StatelessWidget {
   final double income;
   final double expenses;
@@ -16,41 +17,41 @@ class BalanceCard extends StatelessWidget {
 
   double get _netBalance => income - expenses;
 
-  int get _savingsRate {
-    if (income <= 0) return 0;
-    final rate = (_netBalance / income) * 100;
-    return rate.clamp(0, 999).round();
-  }
+  /// round(net / income × 100)، و 0% عندما لا يوجد دخل.
+  int get _savingsRate =>
+      income <= 0 ? 0 : (_netBalance / income * 100).round();
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final strings = AppStrings.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: AppColors.balanceGradient,
+        gradient: colors.balanceGradient,
         borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Net Balance',
-            style: TextStyle(color: Colors.white70, fontSize: 15),
+          Text(
+            strings.netBalance,
+            style: TextStyle(color: colors.onBalanceMuted, fontSize: 15),
           ),
           const SizedBox(height: 6),
           Text(
             Formatters.currency(_netBalance),
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: colors.onBalance,
               fontSize: 40,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            '$_savingsRate% savings rate',
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            strings.savingsRate(Formatters.percent(_savingsRate)),
+            style: TextStyle(color: colors.onBalanceMuted, fontSize: 14),
           ),
           const SizedBox(height: 20),
           Row(
@@ -58,18 +59,16 @@ class BalanceCard extends StatelessWidget {
               Expanded(
                 child: _MiniStat(
                   icon: Icons.arrow_upward_rounded,
-                  label: 'Income',
+                  label: strings.income,
                   value: income,
-                  highlightLabel: income > 0,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _MiniStat(
                   icon: Icons.arrow_downward_rounded,
-                  label: 'Expenses',
+                  label: strings.expenses,
                   value: expenses,
-                  highlightLabel: false,
                 ),
               ),
             ],
@@ -84,21 +83,20 @@ class _MiniStat extends StatelessWidget {
   final IconData icon;
   final String label;
   final double value;
-  final bool highlightLabel;
 
   const _MiniStat({
     required this.icon,
     required this.label,
     required this.value,
-    required this.highlightLabel,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.balanceInnerBox,
+        color: colors.balanceTile,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -106,13 +104,14 @@ class _MiniStat extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.white70, size: 14),
+              Icon(icon, color: colors.onBalanceMuted, size: 14),
               const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: highlightLabel ? const Color(0xFFB9F6CA) : Colors.white70,
-                  fontSize: 13,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colors.onBalanceMuted, fontSize: 13),
                 ),
               ),
             ],
@@ -120,8 +119,8 @@ class _MiniStat extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             Formatters.currency(value),
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: colors.onBalance,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),

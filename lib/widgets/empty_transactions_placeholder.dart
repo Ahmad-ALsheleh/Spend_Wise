@@ -1,38 +1,35 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
+import '../utils/app_strings.dart';
 
-/// الحالة الفارغة "No transactions yet" المعروضة بالشاشة الرئيسية
-/// عندما لا توجد أي معاملة بعد.
+/// الحالة الفارغة "No transactions yet" عندما لا توجد معاملات بالشهر المعروض.
 class EmptyTransactionsPlaceholder extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const EmptyTransactionsPlaceholder({
-    super.key,
-    this.title = 'No transactions yet',
-    this.subtitle = 'Tap + to add your first entry',
-  });
+  const EmptyTransactionsPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final strings = AppStrings.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Column(
         children: [
-          const Text('💵', style: TextStyle(fontSize: 56)),
+          Text(strings.emptyStateEmoji, style: const TextStyle(fontSize: 56)),
           const SizedBox(height: 16),
           Text(
-            title,
-            style: const TextStyle(
+            strings.emptyTitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            subtitle,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+            strings.emptySubtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: colors.textSecondary, fontSize: 13),
           ),
         ],
       ),

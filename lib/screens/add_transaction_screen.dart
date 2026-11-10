@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../models/transaction_model.dart';
 import '../utils/app_colors.dart';
+import '../utils/app_strings.dart';
 import '../utils/category_data.dart';
-import '../widgets/type_toggle.dart';
 import '../widgets/amount_input.dart';
 import '../widgets/category_selector_grid.dart';
 import '../widgets/date_field.dart';
+import '../widgets/section_label.dart';
+import '../widgets/segmented_toggle.dart';
 
 /// شاشة "New Entry" لإضافة معاملة جديدة (مصروف أو دخل).
 /// عند الحفظ تُعيد true لتُعلم الشاشة المستدعية بضرورة تحديث بياناتها.
@@ -57,28 +59,34 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = CategoryData.byType(_type);
+    final colors = AppColors.of(context);
+    final strings = AppStrings.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 20, 0),
+              padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 20, 0),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.chevron_left,
-                        color: AppColors.textPrimary, size: 28),
+                    tooltip:
+                        MaterialLocalizations.of(context).backButtonTooltip,
+                    // chevron_left ينعكس تلقائياً بالعربية.
+                    icon: Icon(
+                      Icons.chevron_left,
+                      color: colors.textPrimary,
+                      size: 28,
+                    ),
                   ),
-                  const Text(
-                    'New Entry',
+                  Text(
+                    strings.newEntry,
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                 ],
@@ -86,9 +94,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 20),
                 children: [
-                  TypeToggle(selectedType: _type, onChanged: _onTypeChanged),
+                  SegmentedToggle<String>(
+                    options: [
+                      SegmentedToggleOption(
+                        value: TransactionType.expense,
+                        label: strings.expenseType,
+                        icon: Icons.arrow_downward_rounded,
+                      ),
+                      SegmentedToggleOption(
+                        value: TransactionType.income,
+                        label: strings.incomeType,
+                        icon: Icons.arrow_upward_rounded,
+                      ),
+                    ],
+                    selected: _type,
+                    onChanged: _onTypeChanged,
+                  ),
                   const SizedBox(height: 28),
                   AmountInput(
                     controller: _amountController,
@@ -97,57 +120,37 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     },
                   ),
                   const SizedBox(height: 28),
-                  const Text(
-                    'CATEGORY',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.6,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
+                  SectionLabel(strings.categoryLabel),
                   const SizedBox(height: 10),
                   CategorySelectorGrid(
-                    categories: categories,
+                    categories: CategoryData.byType(_type),
                     selectedKey: _selectedCategoryKey,
                     onSelect: (key) =>
                         setState(() => _selectedCategoryKey = key),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'NOTE',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.6,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
+                  SectionLabel(strings.noteLabel),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _noteController,
+                    style: TextStyle(color: colors.textPrimary),
                     decoration: InputDecoration(
-                      hintText: 'Add a note...',
+                      hintText: strings.noteHint,
+                      hintStyle: TextStyle(color: colors.textMuted),
                       filled: true,
-                      fillColor: AppColors.fieldBackground,
+                      fillColor: colors.fieldFill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'DATE',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.6,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
+                  SectionLabel(strings.dateLabel),
                   const SizedBox(height: 8),
                   DateField(
                     date: _selectedDate,
@@ -159,21 +162,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     child: ElevatedButton(
                       onPressed: _canSave ? _save : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        disabledBackgroundColor:
-                        AppColors.fieldBackground,
-                        foregroundColor: Colors.white,
-                        disabledForegroundColor: AppColors.textMuted,
+                        backgroundColor: colors.primary,
+                        disabledBackgroundColor: colors.fieldFill,
+                        foregroundColor: colors.onPrimary,
+                        disabledForegroundColor: colors.textSecondary,
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Save Entry',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                      child: Text(
+                        strings.saveEntry,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

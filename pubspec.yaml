@@ -9,14 +9,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # ترجمات Material واتجاه RTL للعربية (جزء من Flutter SDK)
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.6
 
   # تخزين محلي دائم (SQLite) - البيانات تبقى بعد إغلاق التطبيق
   sqflite: ^2.3.3+1
   path: ^1.9.0
 
-  # تنسيق العملة والتاريخ
-  intl: ^0.19.0
+  # تنسيق العملة والتاريخ (الإصدار يحدده flutter_localizations)
+  intl: ^0.20.2
 
   # الرسوم البيانية بشاشة Analytics
   fl_chart: ^0.68.0
@@ -41,4 +44,3 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/app_icon.png
-    - assets/images/

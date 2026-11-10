@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import '../utils/formatters.dart';
 
+/// بطاقة رقم صغيرة بشاشة Analytics (Income / Expenses / Saved أو Avg/day).
 class AnalyticsStatCard extends StatelessWidget {
   final String label;
   final double value;
   final Color background;
-  final Color textColor;
+  final Color foreground;
 
   const AnalyticsStatCard({
     super.key,
     required this.label,
     required this.value,
     required this.background,
-    this.textColor = const Color(0xFF14181B),
+    required this.foreground,
   });
 
   @override
@@ -27,7 +28,13 @@ class AnalyticsStatCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.75)),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              color: foreground.withValues(alpha: 0.75),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -36,7 +43,7 @@ class AnalyticsStatCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: textColor,
+              color: foreground,
             ),
           ),
         ],

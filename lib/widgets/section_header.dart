@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 
+/// عنوان قسم مع زر نصي اختياري بالطرف (Recent ... See all).
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? actionLabel;
@@ -15,15 +16,16 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
           ),
         ),
         if (actionLabel != null)
@@ -31,8 +33,8 @@ class SectionHeader extends StatelessWidget {
             onTap: onActionTap,
             child: Text(
               actionLabel!,
-              style: const TextStyle(
-                color: AppColors.primary,
+              style: TextStyle(
+                color: colors.primary,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
