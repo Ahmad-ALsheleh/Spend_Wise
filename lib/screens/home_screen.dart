@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
+import '../models/currency.dart';
 import '../models/transaction_model.dart';
 import '../utils/app_strings.dart';
 import '../widgets/balance_card.dart';
@@ -12,13 +13,21 @@ import '../widgets/transaction_tile.dart';
 /// شاشة "Overview" الرئيسية.
 /// State Full بالكامل: تحمّل بياناتها من DatabaseHelper وتُحدّث نفسها
 /// عبر setState دون أي مدير حالة خارجي.
+///
+/// بطاقة الرصيد لعملة واحدة ([currency]) يبدّلها مفتاحها، أما قائمة Recent
+/// فتعرض آخر المعاملات بالعملتين، كلٌّ برمز عملته.
 class HomeScreen extends StatefulWidget {
+  final Currency currency;
+  final ValueChanged<Currency> onCurrencyChanged;
+
   /// "See all" ينقل لتبويب History.
   final VoidCallback onSeeAllPressed;
   final VoidCallback onSettingsPressed;
 
   const HomeScreen({
     super.key,
+    required this.currency,
+    required this.onCurrencyChanged,
     required this.onSeeAllPressed,
     required this.onSettingsPressed,
   });
@@ -68,11 +77,15 @@ class HomeScreenState extends State<HomeScreen> {
     reload();
   }
 
-  double get _income => _transactions
+  /// معاملات الشهر بالعملة المعروضة فقط (لا يُجمع الدولار مع الليرة).
+  Iterable<TransactionModel> get _inCurrency =>
+      _transactions.where((t) => t.currency == widget.currency);
+
+  double get _income => _inCurrency
       .where((t) => t.isIncome)
       .fold(0.0, (sum, t) => sum + t.amount);
 
-  double get _expenses => _transactions
+  double get _expenses => _inCurrency
       .where((t) => t.isExpense)
       .fold(0.0, (sum, t) => sum + t.amount);
 
@@ -106,7 +119,12 @@ class HomeScreenState extends State<HomeScreen> {
                 child: Center(child: CircularProgressIndicator()),
               )
             else
-              BalanceCard(income: _income, expenses: _expenses),
+              BalanceCard(
+                income: _income,
+                expenses: _expenses,
+                currency: widget.currency,
+                onCurrencyChanged: widget.onCurrencyChanged,
+              ),
             const SizedBox(height: 28),
             SectionHeader(
               title: strings.recent,

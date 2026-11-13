@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../utils/formatters.dart';
+import '../models/currency.dart';
+import '../utils/app_strings.dart';
 
 /// بطاقة رقم صغيرة بشاشة Analytics (Income / Expenses / Saved أو Avg/day).
 class AnalyticsStatCard extends StatelessWidget {
   final String label;
   final double value;
+  final Currency currency;
   final Color background;
   final Color foreground;
 
@@ -12,6 +14,7 @@ class AnalyticsStatCard extends StatelessWidget {
     super.key,
     required this.label,
     required this.value,
+    required this.currency,
     required this.background,
     required this.foreground,
   });
@@ -37,13 +40,17 @@ class AnalyticsStatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            Formatters.currency(value),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: foreground,
+          // مبالغ الليرة الطويلة تصغر لتبقى بسطر واحد داخل البطاقة.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              AppStrings.of(context).money(value, currency),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: foreground,
+              ),
             ),
           ),
         ],

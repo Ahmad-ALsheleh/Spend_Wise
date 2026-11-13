@@ -1,5 +1,7 @@
+import '../models/currency.dart';
 import 'app_strings.dart';
 import 'category_data.dart';
+import 'formatters.dart';
 
 /// النصوص الإنجليزية — مطابقة حرفياً لصور التصميم.
 class AppStringsEn extends AppStrings {
@@ -96,7 +98,9 @@ class AppStringsEn extends AppStrings {
   String get noExpensesYet => 'No expenses yet';
 
   @override
-  String get settings => 'Settings';
+  String get languageAndTheme => 'Language & theme';
+  @override
+  String get languageShortName => 'EN';
   @override
   String get languageLabel => 'LANGUAGE';
   @override
@@ -107,6 +111,22 @@ class AppStringsEn extends AppStrings {
   String get lightTheme => 'Light';
   @override
   String get darkTheme => 'Dark';
+
+  @override
+  String currencySymbol(Currency currency) => switch (currency) {
+        Currency.usd => r'$',
+        Currency.syp => 'SYP',
+      };
+  @override
+  String currencyName(Currency currency) => switch (currency) {
+        Currency.usd => 'Dollar',
+        Currency.syp => 'Syrian pound',
+      };
+
+  /// "–SYP 150,000": الرمز قبل الرقم مثل "$".
+  @override
+  String sypMoney(String sign, String number) =>
+      Formatters.ltr('${sign}SYP $number');
 
   @override
   String categoryName(String key) => switch (key) {

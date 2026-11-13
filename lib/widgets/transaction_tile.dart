@@ -3,7 +3,6 @@ import '../models/transaction_model.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_strings.dart';
 import '../utils/category_data.dart';
-import '../utils/formatters.dart';
 
 /// صف معاملة واحدة: أيقونة التصنيف + العنوان + التصنيف + المبلغ الملون.
 ///
@@ -91,9 +90,10 @@ class TransactionTile extends StatelessWidget {
                       icon: const Icon(Icons.delete_outline, size: 22),
                     )
                   : Text(
-                      Formatters.signedCurrency(
+                      strings.signedMoney(
                         transaction.amount,
-                        transaction.type,
+                        transaction.currency,
+                        income: transaction.isIncome,
                       ),
                       key: const ValueKey('amount'),
                       style: TextStyle(

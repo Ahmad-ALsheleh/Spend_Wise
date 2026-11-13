@@ -8,45 +8,80 @@ class SegmentedToggleOption<T> {
   final IconData? icon;
   final String? emoji;
 
+  /// ما يقرؤه قارئ الشاشة بدل [label] (مثلاً "دولار" بدل "$").
+  final String? semanticLabel;
+
   const SegmentedToggleOption({
     required this.value,
     required this.label,
     this.icon,
     this.emoji,
+    this.semanticLabel,
   });
 }
 
-/// مفتاح اختيار مقسّم: Expense/Income، و Month/Week، وخيارات الإعدادات.
+/// ألوان بديلة للمفتاح، مثلاً فوق بطاقة الرصيد الملونة.
+class SegmentedToggleColors {
+  final Color track;
+  final Color thumb;
+  final Color selected;
+  final Color unselected;
+
+  const SegmentedToggleColors({
+    required this.track,
+    required this.thumb,
+    required this.selected,
+    required this.unselected,
+  });
+}
+
+/// مفتاح اختيار مقسّم: Expense/Income، و Month/Week، والعملة، وخيارات الإعدادات.
 /// الخيار المحدد بخلفية فاتحة وظل خفيف كما في التصميم.
 class SegmentedToggle<T> extends StatelessWidget {
   final List<SegmentedToggleOption<T>> options;
   final T selected;
   final ValueChanged<T> onChanged;
 
+  /// null = ألوان التطبيق العادية.
+  final SegmentedToggleColors? palette;
+
+  /// نسخة مدمجة أقل ارتفاعاً.
+  final bool dense;
+
   const SegmentedToggle({
     super.key,
     required this.options,
     required this.selected,
     required this.onChanged,
+    this.palette,
+    this.dense = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final effectivePalette = palette ??
+        SegmentedToggleColors(
+          track: colors.toggleTrack,
+          thumb: colors.toggleThumb,
+          selected: colors.textPrimary,
+          unselected: colors.textSecondary,
+        );
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: EdgeInsets.all(dense ? 3 : 4),
       decoration: BoxDecoration(
-        color: AppColors.of(context).toggleTrack,
-        borderRadius: BorderRadius.circular(16),
+        color: effectivePalette.track,
+        borderRadius: BorderRadius.circular(dense ? 12 : 16),
       ),
       child: Row(
         children: [
           for (final option in options)
             Expanded(
               child: _Segment(
-                label: option.label,
-                icon: option.icon,
-                emoji: option.emoji,
+                option: option,
                 selected: option.value == selected,
+                palette: effectivePalette,
+                dense: dense,
                 onTap: () => onChanged(option.value),
               ),
             ),
@@ -57,43 +92,44 @@ class SegmentedToggle<T> extends StatelessWidget {
 }
 
 class _Segment extends StatelessWidget {
-  final String label;
-  final IconData? icon;
-  final String? emoji;
+  final SegmentedToggleOption<Object?> option;
   final bool selected;
+  final SegmentedToggleColors palette;
+  final bool dense;
   final VoidCallback onTap;
 
   const _Segment({
-    required this.label,
-    required this.icon,
-    required this.emoji,
+    required this.option,
     required this.selected,
+    required this.palette,
+    required this.dense,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final foreground = selected ? colors.textPrimary : colors.textSecondary;
+    final foreground = selected ? palette.selected : palette.unselected;
     return Semantics(
       button: true,
       selected: selected,
+      label: option.semanticLabel,
+      excludeSemantics: option.semanticLabel != null,
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+          padding:
+              EdgeInsets.symmetric(vertical: dense ? 6 : 12, horizontal: 4),
           decoration: BoxDecoration(
             // نفس اللون بشفافية صفر حتى يكون الانتقال تلاشياً نظيفاً.
-            color: selected
-                ? colors.toggleThumb
-                : colors.toggleThumb.withValues(alpha: 0),
-            borderRadius: BorderRadius.circular(12),
+            color:
+                selected ? palette.thumb : palette.thumb.withValues(alpha: 0),
+            borderRadius: BorderRadius.circular(dense ? 9 : 12),
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: colors.shadow,
+                      color: AppColors.of(context).shadow,
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -103,21 +139,22 @@ class _Segment extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (icon != null) ...[
-                Icon(icon, size: 16, color: foreground),
+              if (option.icon != null) ...[
+                Icon(option.icon, size: 16, color: foreground),
                 const SizedBox(width: 6),
               ],
-              if (emoji != null) ...[
-                Text(emoji!, style: const TextStyle(fontSize: 14)),
+              if (option.emoji != null) ...[
+                Text(option.emoji!, style: const TextStyle(fontSize: 14)),
                 const SizedBox(width: 6),
               ],
               Flexible(
                 child: Text(
-                  label,
+                  option.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontWeight: FontWeight.w600,
+                    fontSize: dense ? 13 : 14,
+                    fontWeight: dense ? FontWeight.w700 : FontWeight.w600,
                     color: foreground,
                   ),
                 ),

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
+import '../models/currency.dart';
 import 'app_strings_ar.dart';
 import 'app_strings_en.dart';
 import 'formatters.dart';
@@ -97,13 +98,69 @@ abstract class AppStrings {
   String get noExpensesInPeriod;
   String get noExpensesYet;
 
-  // ----------------------------------------------------- الإعدادات
-  String get settings;
+  // ----------------------------------------------------- اللغة والمظهر
+  /// عنوان اللوحة وتلميح الزر الذي يفتحها.
+  String get languageAndTheme;
+
+  /// اسم اللغة الحالية مختصراً داخل زر الترويسة (EN / عربي).
+  String get languageShortName;
   String get languageLabel;
   String get themeLabel;
   String get systemOption;
   String get lightTheme;
   String get darkTheme;
+
+  // ----------------------------------------------------- العملات
+  /// رمز العملة: $ للدولار، و SYP / ل.س لليرة.
+  String currencySymbol(Currency currency);
+
+  /// اسم العملة: Dollar / Syrian pound — دولار / ليرة سورية.
+  String currencyName(Currency currency);
+
+  /// "ليرة سورية (ل.س)" — خيارات العملة بشاشة New Entry.
+  String currencyLabel(Currency currency) =>
+      '${currencyName(currency)} (${currencySymbol(currency)})';
+
+  /// شكل مبلغ الليرة بكل لغة: "–SYP 150,000" أو "–150,000 ل.س".
+  @protected
+  String sypMoney(String sign, String number);
+
+  /// المبلغ مع رمز عملته: "$1,000.00" أو "150,000 ل.س".
+  /// [sign] لقوائم المعاملات (+ أو –)؛ بدونه تظهر "-" للقيم السالبة فقط.
+  String money(double value, Currency currency, {String? sign}) {
+    final effectiveSign = sign ?? (value < 0 ? '-' : '');
+    final abs = value.abs();
+    return switch (currency) {
+      Currency.usd => Formatters.ltr('$effectiveSign${Formatters.usd(abs)}'),
+      Currency.syp => sypMoney(effectiveSign, Formatters.syp(abs)),
+    };
+  }
+
+  /// +$1,000.00 للدخل و –$650.00 للمصروف (أو بالليرة).
+  String signedMoney(double amount, Currency currency,
+          {required bool income}) =>
+      money(amount, currency, sign: income ? '+' : Formatters.expenseSign);
+
+  /// مبالغ بعدة عملات معاً، لا تُجمع أبداً: "$12.50 · 150,000 ل.س"
+  /// (أو كل عملة بسطر مع [separator] = '\n'). إن لم يوجد أي مبلغ: صفر بعملة [fallback].
+  String moneyList(
+    Map<Currency, double> amounts,
+    Currency fallback, {
+    String separator = ' · ',
+  }) {
+    final parts = [
+      for (final currency in Currency.values)
+        if ((amounts[currency] ?? 0) != 0) money(amounts[currency]!, currency),
+    ];
+    return parts.isEmpty ? money(0, fallback) : parts.join(separator);
+  }
+
+  /// المبلغ المختصر أسفل أعمدة Daily Spending: "$650" أو "150K".
+  String chartAmount(double value, Currency currency) => Formatters.ltr(
+        currency == Currency.usd
+            ? Formatters.usdWhole(value)
+            : Formatters.compact(value),
+      );
 
   // ----------------------------------------------------- الفئات
   /// اسم الفئة حسب مفتاحها المخزَّن (CategoryKeys).

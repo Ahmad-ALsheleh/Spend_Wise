@@ -1,3 +1,5 @@
+import 'currency.dart';
+
 /// نوع المعاملة
 class TransactionType {
   static const String expense = 'expense';
@@ -12,6 +14,7 @@ class TransactionModel {
   final String categoryKey; // مفتاح التصنيف (يُطابق CategoryModel.key)
   final String type; // expense | income
   final DateTime date;
+  final Currency currency; // كل معاملة بعملتها (دولار أو ليرة)
 
   const TransactionModel({
     this.id,
@@ -20,6 +23,7 @@ class TransactionModel {
     required this.categoryKey,
     required this.type,
     required this.date,
+    this.currency = Currency.usd,
   });
 
   bool get isIncome => type == TransactionType.income;
@@ -34,6 +38,7 @@ class TransactionModel {
       'category_key': categoryKey,
       'type': type,
       'date': date.toIso8601String(),
+      'currency': currency.code,
     };
   }
 
@@ -45,6 +50,7 @@ class TransactionModel {
       categoryKey: map['category_key'] as String,
       type: map['type'] as String,
       date: DateTime.parse(map['date'] as String),
+      currency: Currency.fromCode(map['currency'] as String?),
     );
   }
 
@@ -55,6 +61,7 @@ class TransactionModel {
     String? categoryKey,
     String? type,
     DateTime? date,
+    Currency? currency,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -63,6 +70,7 @@ class TransactionModel {
       categoryKey: categoryKey ?? this.categoryKey,
       type: type ?? this.type,
       date: date ?? this.date,
+      currency: currency ?? this.currency,
     );
   }
 }

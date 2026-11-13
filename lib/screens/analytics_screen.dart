@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../models/analytics_period.dart';
+import '../models/currency.dart';
 import '../models/transaction_model.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_strings.dart';
 import '../utils/category_data.dart';
-import '../utils/formatters.dart';
 import '../widgets/analytics_stat_card.dart';
 import '../widgets/category_breakdown_tile.dart';
+import '../widgets/currency_switch.dart';
 import '../widgets/daily_spending_chart.dart';
 import '../widgets/month_selector.dart';
 import '../widgets/screen_header.dart';
@@ -15,10 +16,20 @@ import '../widgets/segmented_toggle.dart';
 import '../widgets/spending_breakdown_gauge.dart';
 
 /// شاشة Analytics: تبديل شهري/أسبوعي، إحصائيات، رسوم بيانية، توزيع حسب التصنيف.
+///
+/// كل الأرقام لعملة واحدة ([currency])، يبدّلها مفتاح "$ | ل.س" بجانب
+/// مفتاح الفترة؛ الدولار والليرة لا يُجمعان معاً.
 class AnalyticsScreen extends StatefulWidget {
+  final Currency currency;
+  final ValueChanged<Currency> onCurrencyChanged;
   final VoidCallback onSettingsPressed;
 
-  const AnalyticsScreen({super.key, required this.onSettingsPressed});
+  const AnalyticsScreen({
+    super.key,
+    required this.currency,
+    required this.onCurrencyChanged,
+    required this.onSettingsPressed,
+  });
 
   @override
   State<AnalyticsScreen> createState() => AnalyticsScreenState();
@@ -108,16 +119,20 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
       ? _selectedMonth.isBefore(_currentMonth())
       : _selectedWeekStart.isBefore(_startOfWeek(DateTime.now()));
 
+  /// معاملات الفترة بالعملة المختارة فقط.
+  Iterable<TransactionModel> get _inCurrency =>
+      _transactions.where((t) => t.currency == widget.currency);
+
   double get _income =>
-      _transactions.where((t) => t.isIncome).fold(0.0, (s, t) => s + t.amount);
+      _inCurrency.where((t) => t.isIncome).fold(0.0, (s, t) => s + t.amount);
 
   double get _expenses =>
-      _transactions.where((t) => t.isExpense).fold(0.0, (s, t) => s + t.amount);
+      _inCurrency.where((t) => t.isExpense).fold(0.0, (s, t) => s + t.amount);
 
   /// مصروف كل يوم من أيام الأسبوع المختار (Mon..Sun).
   List<double> get _dailyExpenses => [
         for (final day in _weekDays)
-          _transactions
+          _inCurrency
               .where(
                 (t) =>
                     t.isExpense &&
@@ -139,7 +154,7 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
     final total = _expenses;
     if (total <= 0) return [];
     final byCategory = <String, double>{};
-    for (final t in _transactions.where((t) => t.isExpense)) {
+    for (final t in _inCurrency.where((t) => t.isExpense)) {
       byCategory[t.categoryKey] = (byCategory[t.categoryKey] ?? 0) + t.amount;
     }
     final entries = byCategory.entries.toList()
@@ -159,6 +174,7 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final strings = AppStrings.of(context);
+    final currency = widget.currency;
     final isMonth = _period == AnalyticsPeriod.month;
     final slices = _slices;
     final sectionTitleStyle = TextStyle(
@@ -178,21 +194,32 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
               onSettingsPressed: widget.onSettingsPressed,
             ),
             const SizedBox(height: 16),
-            SegmentedToggle<AnalyticsPeriod>(
-              options: [
-                SegmentedToggleOption(
-                  value: AnalyticsPeriod.month,
-                  label: strings.month,
-                  emoji: strings.calendarEmoji,
+            Row(
+              children: [
+                Expanded(
+                  child: SegmentedToggle<AnalyticsPeriod>(
+                    options: [
+                      SegmentedToggleOption(
+                        value: AnalyticsPeriod.month,
+                        label: strings.month,
+                        emoji: strings.calendarEmoji,
+                      ),
+                      SegmentedToggleOption(
+                        value: AnalyticsPeriod.week,
+                        label: strings.week,
+                        emoji: strings.calendarEmoji,
+                      ),
+                    ],
+                    selected: _period,
+                    onChanged: _changePeriodType,
+                  ),
                 ),
-                SegmentedToggleOption(
-                  value: AnalyticsPeriod.week,
-                  label: strings.week,
-                  emoji: strings.calendarEmoji,
+                const SizedBox(width: 10),
+                CurrencySwitch(
+                  selected: currency,
+                  onChanged: widget.onCurrencyChanged,
                 ),
               ],
-              selected: _period,
-              onChanged: _changePeriodType,
             ),
             const SizedBox(height: 14),
             MonthSelector(
@@ -216,6 +243,7 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
                     child: AnalyticsStatCard(
                       label: strings.income,
                       value: _income,
+                      currency: currency,
                       background: colors.incomeTile,
                       foreground: colors.onIncomeTile,
                     ),
@@ -225,6 +253,7 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
                     child: AnalyticsStatCard(
                       label: strings.expenses,
                       value: _expenses,
+                      currency: currency,
                       background: colors.expenseTile,
                       foreground: colors.onExpenseTile,
                     ),
@@ -234,6 +263,7 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
                     child: AnalyticsStatCard(
                       label: isMonth ? strings.saved : strings.avgPerDay,
                       value: isMonth ? _income - _expenses : _avgPerDay,
+                      currency: currency,
                       background: colors.savedTile,
                       foreground: colors.onSavedTile,
                     ),
@@ -254,7 +284,7 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
                     const SizedBox(width: 12),
                     Flexible(
                       child: Text(
-                        strings.weekTotal(Formatters.currency(_expenses)),
+                        strings.weekTotal(strings.money(_expenses, currency)),
                         textAlign: TextAlign.end,
                         style: TextStyle(
                           fontSize: 13,
@@ -265,7 +295,11 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                DailySpendingChart(days: _weekDays, values: _dailyExpenses),
+                DailySpendingChart(
+                  days: _weekDays,
+                  values: _dailyExpenses,
+                  currency: currency,
+                ),
               ],
               const SizedBox(height: 28),
               Text(strings.spendingBreakdown, style: sectionTitleStyle),
@@ -289,6 +323,7 @@ class AnalyticsScreenState extends State<AnalyticsScreen> {
                     amount: s.amount,
                     ratio: s.percentage / 100,
                     barColor: s.color,
+                    currency: currency,
                   ),
             ],
           ],

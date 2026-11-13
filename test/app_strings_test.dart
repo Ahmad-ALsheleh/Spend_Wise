@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:spendwise/models/currency.dart';
 import 'package:spendwise/utils/app_strings_ar.dart';
 import 'package:spendwise/utils/app_strings_en.dart';
 import 'package:spendwise/utils/category_data.dart';
@@ -10,6 +11,64 @@ void main() {
 
   const en = AppStringsEn();
   const ar = AppStringsAr();
+  final dash = Formatters.expenseSign;
+  String ltr(String text) => Formatters.ltr(text);
+
+  group('money in each currency', () {
+    test('dollars look the same in both languages', () {
+      expect(en.money(1000, Currency.usd), ltr(r'$1,000.00'));
+      expect(ar.money(1000, Currency.usd), ltr(r'$1,000.00'));
+      expect(en.money(-350, Currency.usd), ltr(r'-$350.00'));
+      expect(
+        en.signedMoney(650, Currency.usd, income: false),
+        ltr('$dash\$650.00'),
+      );
+      expect(
+        en.signedMoney(1000, Currency.usd, income: true),
+        ltr(r'+$1,000.00'),
+      );
+    });
+
+    test('Syrian pounds: SYP before the number in English', () {
+      expect(en.money(150000, Currency.syp), ltr('SYP 150,000'));
+      expect(
+        en.signedMoney(150000, Currency.syp, income: false),
+        ltr('${dash}SYP 150,000'),
+      );
+      expect(en.money(-2500, Currency.syp), ltr('-SYP 2,500'));
+    });
+
+    test('Syrian pounds: number then ل.س in Arabic, sign kept with it', () {
+      expect(ar.money(150000, Currency.syp), '${ltr('150,000')} ل.س');
+      expect(
+        ar.signedMoney(1250.5, Currency.syp, income: true),
+        '${ltr('+1,250.50')} ل.س',
+      );
+      expect(ar.money(-2500, Currency.syp), '${ltr('-2,500')} ل.س');
+    });
+
+    test('totals in several currencies are listed, never added', () {
+      expect(
+        ar.moneyList({Currency.syp: 150000, Currency.usd: 12.5}, Currency.usd),
+        '${ar.money(12.5, Currency.usd)} · ${ar.money(150000, Currency.syp)}',
+      );
+      expect(
+        en.moneyList({Currency.usd: 0}, Currency.syp),
+        en.money(0, Currency.syp),
+      );
+    });
+
+    test('chart labels stay short', () {
+      expect(en.chartAmount(650, Currency.usd), ltr(r'$650'));
+      expect(ar.chartAmount(150000, Currency.syp), ltr('150K'));
+    });
+
+    test('currency names and labels', () {
+      expect(en.currencyLabel(Currency.syp), 'Syrian pound (SYP)');
+      expect(ar.currencyLabel(Currency.syp), 'ليرة سورية (ل.س)');
+      expect(ar.currencyLabel(Currency.usd), r'دولار ($)');
+    });
+  });
 
   group('dates keep Latin digits in both languages', () {
     test('month and year', () {

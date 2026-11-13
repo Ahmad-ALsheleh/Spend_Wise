@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
+import '../models/currency.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_strings.dart';
 import '../utils/formatters.dart';
+import 'currency_switch.dart';
 
-/// بطاقة "Net Balance" المتدرجة بأعلى الشاشة الرئيسية.
+/// بطاقة "Net Balance" المتدرجة بأعلى الشاشة الرئيسية، لعملة واحدة في كل مرة.
+/// مفتاح "$ | ل.س" بأعلاها يبدّل العملة المعروضة.
 /// Widget مستقل بالكامل: يستقبل الأرقام جاهزة فقط.
 class BalanceCard extends StatelessWidget {
   final double income;
   final double expenses;
+  final Currency currency;
+  final ValueChanged<Currency> onCurrencyChanged;
 
   const BalanceCard({
     super.key,
     required this.income,
     required this.expenses,
+    required this.currency,
+    required this.onCurrencyChanged,
   });
 
   double get _netBalance => income - expenses;
@@ -35,17 +42,33 @@ class BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            strings.netBalance,
-            style: TextStyle(color: colors.onBalanceMuted, fontSize: 15),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  strings.netBalance,
+                  style: TextStyle(color: colors.onBalanceMuted, fontSize: 15),
+                ),
+              ),
+              CurrencySwitch(
+                selected: currency,
+                onChanged: onCurrencyChanged,
+                onBalanceCard: true,
+              ),
+            ],
           ),
           const SizedBox(height: 6),
-          Text(
-            Formatters.currency(_netBalance),
-            style: TextStyle(
-              color: colors.onBalance,
-              fontSize: 40,
-              fontWeight: FontWeight.bold,
+          // مبالغ الليرة قد تكون طويلة: تصغر لتبقى بسطر واحد.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              strings.money(_netBalance, currency),
+              style: TextStyle(
+                color: colors.onBalance,
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 4),
@@ -60,7 +83,7 @@ class BalanceCard extends StatelessWidget {
                 child: _MiniStat(
                   icon: Icons.arrow_upward_rounded,
                   label: strings.income,
-                  value: income,
+                  amount: strings.money(income, currency),
                 ),
               ),
               const SizedBox(width: 12),
@@ -68,7 +91,7 @@ class BalanceCard extends StatelessWidget {
                 child: _MiniStat(
                   icon: Icons.arrow_downward_rounded,
                   label: strings.expenses,
-                  value: expenses,
+                  amount: strings.money(expenses, currency),
                 ),
               ),
             ],
@@ -82,12 +105,12 @@ class BalanceCard extends StatelessWidget {
 class _MiniStat extends StatelessWidget {
   final IconData icon;
   final String label;
-  final double value;
+  final String amount;
 
   const _MiniStat({
     required this.icon,
     required this.label,
-    required this.value,
+    required this.amount,
   });
 
   @override
@@ -117,12 +140,16 @@ class _MiniStat extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            Formatters.currency(value),
-            style: TextStyle(
-              color: colors.onBalance,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              amount,
+              style: TextStyle(
+                color: colors.onBalance,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_strings.dart';
+import 'language_theme_button.dart';
 
-/// ترويسة الشاشات الثلاث: "SPENDWISE" صغيرة فوق عنوان كبير، وزر الإعدادات بالطرف.
+/// ترويسة الشاشات الثلاث: "SPENDWISE" صغيرة فوق عنوان كبير،
+/// وزر اللغة والمظهر بالطرف.
 class ScreenHeader extends StatelessWidget {
   final String title;
   final VoidCallback onSettingsPressed;
@@ -45,16 +47,8 @@ class ScreenHeader extends StatelessWidget {
             ],
           ),
         ),
-        IconButton(
-          onPressed: onSettingsPressed,
-          tooltip: strings.settings,
-          style: IconButton.styleFrom(
-            backgroundColor: colors.surface,
-            foregroundColor: colors.textSecondary,
-            fixedSize: const Size.square(44),
-          ),
-          icon: const Icon(Icons.settings_outlined, size: 22),
-        ),
+        const SizedBox(width: 12),
+        LanguageThemeButton(onPressed: onSettingsPressed),
       ],
     );
   }

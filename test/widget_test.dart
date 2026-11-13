@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spendwise/models/app_settings.dart';
+import 'package:spendwise/models/currency.dart';
 import 'package:spendwise/models/transaction_model.dart';
 import 'package:spendwise/utils/app_colors.dart';
 import 'package:spendwise/utils/app_strings.dart';
+import 'package:spendwise/utils/app_strings_ar.dart';
+import 'package:spendwise/utils/app_strings_en.dart';
 import 'package:spendwise/utils/app_theme.dart';
 import 'package:spendwise/utils/category_data.dart';
-import 'package:spendwise/utils/formatters.dart';
 import 'package:spendwise/widgets/amount_input.dart';
+import 'package:spendwise/widgets/currency_switch.dart';
 import 'package:spendwise/widgets/date_field.dart';
 import 'package:spendwise/widgets/history_summary_bar.dart';
+import 'package:spendwise/widgets/language_theme_button.dart';
 import 'package:spendwise/widgets/settings_sheet.dart';
 import 'package:spendwise/widgets/transaction_tile.dart';
 
@@ -38,9 +42,14 @@ Widget _harness(
 
 void main() {
   testWidgets('Arabic lays out right-to-left with Arabic text', (tester) async {
+    const spent = {Currency.usd: 12.5, Currency.syp: 150000.0};
     await tester.pumpWidget(
       _harness(
-        const HistorySummaryBar(count: 3, totalSpent: 12.5),
+        const HistorySummaryBar(
+          count: 3,
+          spent: spent,
+          fallbackCurrency: Currency.usd,
+        ),
         locale: const Locale('ar'),
       ),
     );
@@ -48,8 +57,10 @@ void main() {
     final context = tester.element(find.byType(HistorySummaryBar));
     expect(Directionality.of(context), TextDirection.rtl);
     expect(find.text('3 معاملات'), findsOneWidget);
+    // مصروف كل عملة وحده، كلٌّ بسطر.
+    const ar = AppStringsAr();
     expect(
-      find.text('تم إنفاق ${Formatters.currency(12.5)}'),
+      find.text(ar.spent(ar.moneyList(spent, Currency.usd, separator: '\n'))),
       findsOneWidget,
     );
   });
@@ -69,6 +80,32 @@ void main() {
     );
 
     expect(colors, same(AppColors.dark));
+  });
+
+  testWidgets('header button shows the current language and mode',
+      (tester) async {
+    var presses = 0;
+    void onPressed() => presses++;
+
+    await tester
+        .pumpWidget(_harness(LanguageThemeButton(onPressed: onPressed)));
+    expect(find.text('EN'), findsOneWidget);
+    expect(find.byIcon(Icons.light_mode_rounded), findsOneWidget);
+
+    await tester.pumpWidget(
+      _harness(
+        LanguageThemeButton(onPressed: onPressed),
+        locale: const Locale('ar'),
+        themeMode: ThemeMode.dark,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('عربي'), findsOneWidget);
+    expect(find.byIcon(Icons.dark_mode_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.light_mode_rounded), findsNothing);
+
+    await tester.tap(find.byType(LanguageThemeButton));
+    expect(presses, 1);
   });
 
   testWidgets('settings sheet reports language and theme choices',
@@ -108,7 +145,8 @@ void main() {
       type: TransactionType.expense,
       date: DateTime(2026, 7, 12),
     );
-    final amount = Formatters.signedCurrency(650, TransactionType.expense);
+    final amount =
+        const AppStringsEn().signedMoney(650, Currency.usd, income: false);
     var deleted = false;
 
     await tester
@@ -138,13 +176,59 @@ void main() {
     addTearDown(controller.dispose);
     await tester.pumpWidget(
       _harness(
-        AmountInput(controller: controller, onChanged: (_) {}),
+        AmountInput(
+          controller: controller,
+          currency: Currency.syp,
+          onChanged: (_) {},
+        ),
         locale: const Locale('ar'),
       ),
     );
 
+    expect(find.text('ل.س'), findsOneWidget); // رمز العملة المختارة
     await tester.enterText(find.byType(TextField), '١٢٫٥');
     expect(controller.text, '12.5');
+  });
+
+  testWidgets('a Syrian pound expense shows its own currency', (tester) async {
+    final transaction = TransactionModel(
+      id: 2,
+      title: '',
+      amount: 150000,
+      categoryKey: CategoryKeys.foodDrink,
+      type: TransactionType.expense,
+      date: DateTime(2026, 7, 12),
+      currency: Currency.syp,
+    );
+    await tester.pumpWidget(
+      _harness(
+        TransactionTile(transaction: transaction),
+        locale: const Locale('ar'),
+      ),
+    );
+
+    expect(
+      find.text(
+        const AppStringsAr().signedMoney(150000, Currency.syp, income: false),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('currency switch reports the chosen currency', (tester) async {
+    Currency? chosen;
+    await tester.pumpWidget(
+      _harness(
+        CurrencySwitch(
+          selected: Currency.usd,
+          onChanged: (currency) => chosen = currency,
+        ),
+      ),
+    );
+
+    expect(find.text(r'$'), findsOneWidget);
+    await tester.tap(find.text('SYP'));
+    expect(chosen, Currency.syp);
   });
 
   testWidgets('calendar cannot move past the current month', (tester) async {

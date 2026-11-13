@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../models/currency.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_strings.dart';
-import '../utils/formatters.dart';
 
 /// رسم بياني بالأعمدة يعرض المصروف اليومي خلال أسبوع واحد (Mon..Sun).
 /// اليوم الذي فيه إنفاق: عموده واسمه بلون التطبيق، ومبلغه أسفل اسمه.
 class DailySpendingChart extends StatelessWidget {
   final List<DateTime> days; // 7 أيام بالترتيب من الإثنين
   final List<double> values; // مصروف كل يوم بنفس الترتيب
+  final Currency currency;
 
   const DailySpendingChart({
     super.key,
     required this.days,
     required this.values,
+    required this.currency,
   });
 
   @override
@@ -72,7 +74,7 @@ class DailySpendingChart extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
-                              Formatters.wholeCurrency(values[i]),
+                              strings.chartAmount(values[i], currency),
                               style: TextStyle(
                                 fontSize: 10,
                                 color: colors.textSecondary,

@@ -8,13 +8,14 @@ import '../models/transaction_model.dart';
 /// سجل النسخ:
 /// - 1: جدول transactions.
 /// - 2: جدول settings (اللغة والمظهر). الترحيل لا يمس المعاملات الموجودة.
+/// - 3: عمود currency بجدول transactions؛ المعاملات الموجودة تصبح USD.
 class DatabaseHelper {
   DatabaseHelper._internal();
   static final DatabaseHelper instance = DatabaseHelper._internal();
 
   static Database? _database;
 
-  static const int _version = 2;
+  static const int _version = 3;
   static const String _tableName = 'transactions';
   static const String _settingsTable = 'settings';
 
@@ -39,13 +40,20 @@ class DatabaseHelper {
             amount REAL NOT NULL,
             category_key TEXT NOT NULL,
             type TEXT NOT NULL,
-            date TEXT NOT NULL
+            date TEXT NOT NULL,
+            currency TEXT NOT NULL DEFAULT 'USD'
           )
         ''');
         await _createSettingsTable(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) await _createSettingsTable(db);
+        if (oldVersion < 3) {
+          // كل ما سُجّل قبل دعم الليرة كان بالدولار.
+          await db.execute(
+            "ALTER TABLE $_tableName ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'",
+          );
+        }
       },
     );
   }

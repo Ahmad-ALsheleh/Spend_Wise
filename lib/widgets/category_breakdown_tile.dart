@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/currency.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_strings.dart';
 import '../utils/category_data.dart';
@@ -10,6 +11,7 @@ class CategoryBreakdownTile extends StatelessWidget {
   final double amount;
   final double ratio; // 0.0 - 1.0 من إجمالي المصروفات
   final Color barColor;
+  final Currency currency;
 
   const CategoryBreakdownTile({
     super.key,
@@ -17,6 +19,7 @@ class CategoryBreakdownTile extends StatelessWidget {
     required this.amount,
     required this.ratio,
     required this.barColor,
+    required this.currency,
   });
 
   @override
@@ -39,7 +42,7 @@ class CategoryBreakdownTile extends StatelessWidget {
                 ),
               ),
               Text(
-                Formatters.currency(amount),
+                AppStrings.of(context).money(amount, currency),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,

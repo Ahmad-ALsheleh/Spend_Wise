@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/app_settings.dart';
+import '../models/currency.dart';
 import '../widgets/add_fab.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/settings_sheet.dart';
@@ -34,6 +35,9 @@ class _RootShellState extends State<RootShell> {
   final GlobalKey<AnalyticsScreenState> _analyticsKey =
       GlobalKey<AnalyticsScreenState>();
 
+  /// العملة المعروضة بالرئيسية والتحليلات (محفوظة مع الإعدادات).
+  Currency get _currency => widget.settings.currency;
+
   /// يُعاد تحميل بيانات كل الشاشات الثلاث معًا بعد أي إضافة/حذف معاملة،
   /// حتى تبقى الأرقام متطابقة أينما ظهرت (Overview / History / Analytics).
   Future<void> _reloadAll() async {
@@ -44,7 +48,9 @@ class _RootShellState extends State<RootShell> {
 
   Future<void> _openAddTransaction() async {
     final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
+      MaterialPageRoute(
+        builder: (_) => AddTransactionScreen(initialCurrency: _currency),
+      ),
     );
     if (saved == true) {
       await _reloadAll();
@@ -55,6 +61,10 @@ class _RootShellState extends State<RootShell> {
     // مغادرة History تلغي زر الحذف الظاهر على أي معاملة.
     _historyKey.currentState?.cancelDeleteMode();
     setState(() => _currentIndex = index);
+  }
+
+  void _changeCurrency(Currency currency) {
+    widget.onSettingsChanged(widget.settings.copyWith(currency: currency));
   }
 
   void _openSettings() {
@@ -73,16 +83,21 @@ class _RootShellState extends State<RootShell> {
         children: [
           HomeScreen(
             key: _homeKey,
+            currency: _currency,
+            onCurrencyChanged: _changeCurrency,
             onSeeAllPressed: () => _selectTab(_historyTab),
             onSettingsPressed: _openSettings,
           ),
           HistoryScreen(
             key: _historyKey,
+            currency: _currency,
             onSettingsPressed: _openSettings,
             onTransactionDeleted: _reloadAll,
           ),
           AnalyticsScreen(
             key: _analyticsKey,
+            currency: _currency,
+            onCurrencyChanged: _changeCurrency,
             onSettingsPressed: _openSettings,
           ),
         ],

@@ -1,5 +1,7 @@
+import '../models/currency.dart';
 import 'app_strings.dart';
 import 'category_data.dart';
+import 'formatters.dart';
 
 /// النصوص العربية. الأرقام تبقى لاتينية، والمبالغ تصل معزولة LTR من Formatters.
 class AppStringsAr extends AppStrings {
@@ -103,7 +105,9 @@ class AppStringsAr extends AppStrings {
   String get noExpensesYet => 'لا توجد مصروفات بعد';
 
   @override
-  String get settings => 'الإعدادات';
+  String get languageAndTheme => 'اللغة والمظهر';
+  @override
+  String get languageShortName => 'عربي';
   @override
   String get languageLabel => 'اللغة';
   @override
@@ -114,6 +118,23 @@ class AppStringsAr extends AppStrings {
   String get lightTheme => 'فاتح';
   @override
   String get darkTheme => 'داكن';
+
+  @override
+  String currencySymbol(Currency currency) => switch (currency) {
+        Currency.usd => r'$',
+        Currency.syp => 'ل.س',
+      };
+  @override
+  String currencyName(Currency currency) => switch (currency) {
+        Currency.usd => 'دولار',
+        Currency.syp => 'ليرة سورية',
+      };
+
+  /// "–150,000 ل.س": الرقم معزول LTR (لتبقى إشارته معه) ثم الرمز
+  /// بترتيب القراءة العربي، فيظهر الرمز يسار الرقم.
+  @override
+  String sypMoney(String sign, String number) =>
+      '${Formatters.ltr('$sign$number')} ل.س';
 
   @override
   String categoryName(String key) => switch (key) {

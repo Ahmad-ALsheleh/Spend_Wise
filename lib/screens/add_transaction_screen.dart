@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
+import '../models/currency.dart';
 import '../models/transaction_model.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_strings.dart';
@@ -13,7 +14,13 @@ import '../widgets/segmented_toggle.dart';
 /// شاشة "New Entry" لإضافة معاملة جديدة (مصروف أو دخل).
 /// عند الحفظ تُعيد true لتُعلم الشاشة المستدعية بضرورة تحديث بياناتها.
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key});
+  /// العملة المختارة مبدئياً (المعروضة حالياً بالرئيسية)؛ يغيّرها المستخدم لكل معاملة.
+  final Currency initialCurrency;
+
+  const AddTransactionScreen({
+    super.key,
+    this.initialCurrency = Currency.usd,
+  });
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -21,6 +28,7 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String _type = TransactionType.expense;
+  late Currency _currency = widget.initialCurrency;
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   String? _selectedCategoryKey;
@@ -51,6 +59,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       categoryKey: _selectedCategoryKey!,
       type: _type,
       date: _selectedDate,
+      currency: _currency,
     );
     await DatabaseHelper.instance.insertTransaction(tx);
     if (!mounted) return;
@@ -115,9 +124,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   const SizedBox(height: 28),
                   AmountInput(
                     controller: _amountController,
+                    currency: _currency,
                     onChanged: (v) {
                       setState(() => _amount = double.tryParse(v) ?? 0);
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  // عملة هذه المعاملة: بالاسم والرمز تحت المبلغ مباشرة.
+                  SegmentedToggle<Currency>(
+                    options: [
+                      for (final currency in Currency.values)
+                        SegmentedToggleOption(
+                          value: currency,
+                          label: strings.currencyLabel(currency),
+                        ),
+                    ],
+                    selected: _currency,
+                    onChanged: (currency) =>
+                        setState(() => _currency = currency),
                   ),
                   const SizedBox(height: 28),
                   SectionLabel(strings.categoryLabel),

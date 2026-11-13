@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
+import '../models/currency.dart';
 import '../models/transaction_model.dart';
 import '../utils/app_strings.dart';
 import '../widgets/date_group_header.dart';
@@ -14,7 +15,11 @@ import '../widgets/transaction_tile.dart';
 /// الحذف: الضغط على معاملة يُظهر زر سلة مكان المبلغ، والضغط على السلة يحذف.
 /// الضغط على المعاملة نفسها مجدداً أو على أي مكان آخر يلغي ذلك.
 /// معاملة واحدة فقط بوضع الحذف في كل مرة.
+///
+/// تعرض المعاملات بالعملتين معاً؛ المجاميع تُحسب لكل عملة وحدها.
 class HistoryScreen extends StatefulWidget {
+  /// العملة المعروضة بالتطبيق؛ تُستخدم لصفر المجاميع عندما لا توجد مصروفات.
+  final Currency currency;
   final VoidCallback onSettingsPressed;
 
   /// يُبلغ RootShell ليعيد تحميل كل التبويبات بعد الحذف.
@@ -22,6 +27,7 @@ class HistoryScreen extends StatefulWidget {
 
   const HistoryScreen({
     super.key,
+    required this.currency,
     required this.onSettingsPressed,
     required this.onTransactionDeleted,
   });
@@ -93,9 +99,16 @@ class HistoryScreenState extends State<HistoryScreen> {
     widget.onTransactionDeleted();
   }
 
-  double get _totalSpent => _transactions
-      .where((t) => t.isExpense)
-      .fold(0.0, (sum, t) => sum + t.amount);
+  /// مجموع المصروفات لكل عملة على حدة (الدولار لا يُجمع مع الليرة).
+  static Map<Currency, double> _spentByCurrency(
+    Iterable<TransactionModel> transactions,
+  ) {
+    final totals = <Currency, double>{};
+    for (final t in transactions.where((t) => t.isExpense)) {
+      totals[t.currency] = (totals[t.currency] ?? 0) + t.amount;
+    }
+    return totals;
+  }
 
   /// تجميع المعاملات حسب اليوم (تاريخ بدون وقت) مع الحفاظ على الترتيب التنازلي
   Map<DateTime, List<TransactionModel>> get _grouped {
@@ -137,7 +150,8 @@ class HistoryScreenState extends State<HistoryScreen> {
               const SizedBox(height: 14),
               HistorySummaryBar(
                 count: _transactions.length,
-                totalSpent: _totalSpent,
+                spent: _spentByCurrency(_transactions),
+                fallbackCurrency: widget.currency,
               ),
               if (_loading)
                 const Padding(
@@ -150,9 +164,8 @@ class HistoryScreenState extends State<HistoryScreen> {
                 for (final day in sortedDays) ...[
                   DateGroupHeader(
                     date: day,
-                    dayTotal: grouped[day]!
-                        .where((t) => t.isExpense)
-                        .fold(0.0, (s, t) => s + t.amount),
+                    dayTotals: _spentByCurrency(grouped[day]!),
+                    fallbackCurrency: widget.currency,
                   ),
                   for (final t in grouped[day]!)
                     TransactionTile(

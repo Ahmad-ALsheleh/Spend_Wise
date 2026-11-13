@@ -45,6 +45,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final strings = AppStrings.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 24),
@@ -64,7 +65,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
             ),
             const SizedBox(height: 16),
             Text(
-              strings.settings,
+              strings.languageAndTheme,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -72,7 +73,11 @@ class _SettingsSheetState extends State<SettingsSheet> {
               ),
             ),
             const SizedBox(height: 20),
-            SectionLabel(strings.languageLabel),
+            // نفس أيقونات زر الترويسة، حتى يربط المستخدم بينهما مباشرة.
+            _SectionHeading(
+              icon: Icons.translate_rounded,
+              label: strings.languageLabel,
+            ),
             const SizedBox(height: 8),
             SegmentedToggle<AppLanguage>(
               options: [
@@ -94,24 +99,27 @@ class _SettingsSheetState extends State<SettingsSheet> {
                   _update(_settings.copyWith(language: language)),
             ),
             const SizedBox(height: 20),
-            SectionLabel(strings.themeLabel),
+            _SectionHeading(
+              icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+              label: strings.themeLabel,
+            ),
             const SizedBox(height: 8),
             SegmentedToggle<ThemeMode>(
               options: [
                 SegmentedToggleOption(
                   value: ThemeMode.system,
                   label: strings.systemOption,
-                  icon: Icons.brightness_auto_outlined,
+                  icon: Icons.brightness_auto_rounded,
                 ),
                 SegmentedToggleOption(
                   value: ThemeMode.light,
                   label: strings.lightTheme,
-                  icon: Icons.light_mode_outlined,
+                  icon: Icons.light_mode_rounded,
                 ),
                 SegmentedToggleOption(
                   value: ThemeMode.dark,
                   label: strings.darkTheme,
-                  icon: Icons.dark_mode_outlined,
+                  icon: Icons.dark_mode_rounded,
                 ),
               ],
               selected: _settings.themeMode,
@@ -120,6 +128,25 @@ class _SettingsSheetState extends State<SettingsSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// عنوان قسم باللوحة مع أيقونته (文A للغة، شمس/قمر للمظهر).
+class _SectionHeading extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _SectionHeading({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.of(context).primary),
+        const SizedBox(width: 6),
+        SectionLabel(label),
+      ],
     );
   }
 }
